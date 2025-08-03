@@ -16,6 +16,7 @@ class UploadToHFDataset:
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("result",)
     FUNCTION = "upload"
+    CATEGORY = "utils"
 
     def upload(self, hf_token, dataset_name, outputs_folder):
         api = HfApi()
