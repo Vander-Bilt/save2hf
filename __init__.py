@@ -39,9 +39,70 @@ class UploadToHFDataset:
         except Exception as e:
             return (f"Upload failed: {str(e)}",)
 
+class DownloadFromHFDataset:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "hf_token": ("STRING", {"default": ""}),
+                "dataset_name": ("STRING", {"default": ""}),
+                "download_folder": ("STRING", {"default": folder_paths.get_input_directory()}),
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("result",)
+    FUNCTION = "download"
+    CATEGORY = "utils"
+
+    def download(self, hf_token, dataset_name, download_folder):
+        api = HfApi()
+        HfFolder.save_token(hf_token)
+        
+        # Create download folder if it doesn't exist
+        if not os.path.exists(download_folder):
+            os.makedirs(download_folder, exist_ok=True)
+
+        try:
+            # List all files in the dataset
+            dataset_info = api.list_repo_files(repo_id=dataset_name, repo_type="dataset", token=hf_token)
+            
+            if not dataset_info:
+                return ("No files found in the specified dataset.",)
+
+            downloaded_count = 0
+            for file_path in dataset_info:
+                # Exclude .gitattributes and other non-data files
+                if file_path.startswith("."):
+                    continue
+                
+                # Check if file already exists to avoid re-downloading
+                local_file_path = os.path.join(download_folder, os.path.basename(file_path))
+                if os.path.exists(local_file_path):
+                    print(f"File already exists, skipping: {local_file_path}")
+                    continue
+
+                # Download the file
+                api.hf_hub_download(
+                    repo_id=dataset_name,
+                    filename=file_path,
+                    repo_type="dataset",
+                    local_dir=download_folder,
+                    local_dir_use_symlinks=False,
+                    token=hf_token
+                )
+                downloaded_count += 1
+                
+            return (f"Downloaded {downloaded_count} files to {download_folder}.",)
+            
+        except Exception as e:
+            return (f"Download failed: {str(e)}",)
+
 NODE_CLASS_MAPPINGS = {
     "UploadToHFDataset": UploadToHFDataset,
+    "DownloadFromHFDataset": DownloadFromHFDataset,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
     "UploadToHFDataset": "Upload outputs to HuggingFace Dataset",
+    "DownloadFromHFDataset": "Download from HuggingFace Dataset",
 }
