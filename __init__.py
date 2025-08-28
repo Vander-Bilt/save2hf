@@ -24,6 +24,7 @@ class PushToHFDataset:
         api = HfApi()
         HfFolder.save_token(hf_token)
         
+        print(f"filepaths got: {filepaths}")
         if not filepaths:
             return ("No files to upload.",)
         
