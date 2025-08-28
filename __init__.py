@@ -29,9 +29,11 @@ class UploadToHFDataset:
             return ("No files to upload.",)
         try:
             for file_path in files:
+                path_in_repo = os.path.join(huggingface_path_in_repo, os.path.basename(file_path))
+
                 api.upload_file(
                     path_or_fileobj=file_path,
-                    path_in_repo=huggingface_path_in_repo,
+                    path_in_repo=path_in_repo,
                     repo_id=dataset_name,
                     repo_type="dataset",
                     token=hf_token,
