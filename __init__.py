@@ -9,6 +9,7 @@ class UploadToHFDataset:
             "required": {
                 "hf_token": ("STRING", {"default": ""}),
                 "dataset_name": ("STRING", {"default": ""}),
+                "huggingface_path_in_repo": ("STRING", {"default": ""}),
                 "outputs_folder": ("STRING", {"default": folder_paths.get_output_directory()}),
             }
         }
@@ -18,7 +19,7 @@ class UploadToHFDataset:
     FUNCTION = "upload"
     CATEGORY = "utils"
 
-    def upload(self, hf_token, dataset_name, outputs_folder):
+    def upload(self, hf_token, dataset_name, huggingface_path_in_repo, outputs_folder):
         api = HfApi()
         HfFolder.save_token(hf_token)
         if not os.path.exists(outputs_folder):
@@ -30,7 +31,7 @@ class UploadToHFDataset:
             for file_path in files:
                 api.upload_file(
                     path_or_fileobj=file_path,
-                    path_in_repo=os.path.basename(file_path),
+                    path_in_repo=huggingface_path_in_repo,
                     repo_id=dataset_name,
                     repo_type="dataset",
                     token=hf_token,
