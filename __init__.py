@@ -17,35 +17,35 @@ class PushToHFDataset:
 
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("result",)
-    FUNCTION = "upload"
+    FUNCTION = "push"
     CATEGORY = "utils"
 
-def upload(self, hf_token, dataset_name, huggingface_path_in_repo, filepaths):
-    api = HfApi()
-    HfFolder.save_token(hf_token)
-    
-    if not filepaths:
-        return ("No files to upload.",)
-    
-    try:
-        for file_path in filepaths:
-            if not os.path.exists(file_path):
-                print(f"File not found, skipping: {file_path}")
-                continue # 如果文件不存在则跳过
-
-            path_in_repo = os.path.join(huggingface_path_in_repo, os.path.basename(file_path))
-
-            api.upload_file(
-                path_or_fileobj=file_path,
-                path_in_repo=path_in_repo,
-                repo_id=dataset_name,
-                repo_type="dataset",
-                token=hf_token,
-            )
+    def push(self, hf_token, dataset_name, huggingface_path_in_repo, filepaths):
+        api = HfApi()
+        HfFolder.save_token(hf_token)
         
-        return (f"Uploaded {len(filepaths)} files to {dataset_name}.",)
-    except Exception as e:
-        return (f"Upload failed: {str(e)}",)
+        if not filepaths:
+            return ("No files to upload.",)
+        
+        try:
+            for file_path in filepaths:
+                if not os.path.exists(file_path):
+                    print(f"File not found, skipping: {file_path}")
+                    continue # 如果文件不存在则跳过
+
+                path_in_repo = os.path.join(huggingface_path_in_repo, os.path.basename(file_path))
+
+                api.upload_file(
+                    path_or_fileobj=file_path,
+                    path_in_repo=path_in_repo,
+                    repo_id=dataset_name,
+                    repo_type="dataset",
+                    token=hf_token,
+                )
+            
+            return (f"Uploaded {len(filepaths)} files to {dataset_name}.",)
+        except Exception as e:
+            return (f"Upload failed: {str(e)}",)
 
 
 
