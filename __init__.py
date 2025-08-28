@@ -11,7 +11,7 @@ class PushToHFDataset:
                 "hf_token": ("STRING", {"default": ""}),
                 "dataset_name": ("STRING", {"default": ""}),
                 "huggingface_path_in_repo": ("STRING", {"default": ""}),
-                "filepaths": ("*",),
+                "filepaths": ("STRING[]", {}),
             }
         }
 
@@ -25,12 +25,6 @@ class PushToHFDataset:
         HfFolder.save_token(hf_token)
         
         print(f"filepaths got: {filepaths}")
-
-        if isinstance(filepaths, tuple) and len(filepaths) > 0:
-            filepaths = filepaths[0]
-
-        if not isinstance(filepaths, list):
-            return (f"Expected a list of filepaths, but got {type(filepaths)}.",)
 
         if not filepaths:
             return ("No files to upload.",)
