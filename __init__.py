@@ -11,7 +11,7 @@ class PushToHFDataset:
                 "hf_token": ("STRING", {"default": ""}),
                 "dataset_name": ("STRING", {"default": ""}),
                 "huggingface_path_in_repo": ("STRING", {"default": ""}),
-                "filepaths": ("STRING[]", {}), # 更改为接收文件路径列表
+                "filepaths": ("*",),
             }
         }
 
@@ -25,14 +25,21 @@ class PushToHFDataset:
         HfFolder.save_token(hf_token)
         
         print(f"filepaths got: {filepaths}")
+
+        if isinstance(filepaths, tuple) and len(filepaths) > 0:
+            filepaths = filepaths[0]
+
+        if not isinstance(filepaths, list):
+            return (f"Expected a list of filepaths, but got {type(filepaths)}.",)
+
         if not filepaths:
             return ("No files to upload.",)
         
         try:
             for file_path in filepaths:
-                if not os.path.exists(file_path):
-                    print(f"File not found, skipping: {file_path}")
-                    continue # 如果文件不存在则跳过
+                if not isinstance(file_path, str) or not os.path.exists(file_path):
+                    print(f"File not found or invalid path, skipping: {file_path}")
+                    continue
 
                 path_in_repo = os.path.join(huggingface_path_in_repo, os.path.basename(file_path))
 
