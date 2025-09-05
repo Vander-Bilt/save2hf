@@ -45,7 +45,8 @@ class PushToHFDataset:
                     token=hf_token,
                 )
             
-            return (f"Uploaded {len(filepaths)} files to {dataset_name}.",)
+            # return (f"Uploaded {len(filepaths)} files to {dataset_name}.",)
+            return filepaths;
         except Exception as e:
             return (f"Upload failed: {str(e)}",)
 
