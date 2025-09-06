@@ -163,29 +163,71 @@ class SendEmail:
     def INPUT_TYPES(cls):
         return {
             "required": {
+                "repo_dataset": ("STRING", {}),
                 "outputs": ("STRING", {}),
-                "smtp_server": ("STRING", {"default": "smtp.example.com"}),
+                "ai_host_api": ("STRING", {"default": "http://ai.all4bridge.serv00.net/view"}),
+                "smtp_server": ("STRING", {"default": "mail11.serv00.com"}),
                 "smtp_port": ("INT", {"default": 587}),
-                "username": ("STRING", {"default": ""}),
+                "username": ("STRING", {"default": "administrator@all4bridge.serv00.net"}),
                 "password": ("STRING", {"default": ""}),
-                "from_addr": ("STRING", {"default": ""}),
+                "from_addr": ("STRING", {"default": "administrator@all4bridge.serv00.net"}),
                 "to_addr": ("STRING", {"default": ""}),
-                "subject": ("STRING", {"default": "ComfyUI Notification"}),
-                "body": ("STRING", {"default": "Attached are the files."}),
+                "subject": ("STRING", {"default": "AI Generation Notification"}),
+                "body": ("STRING", {"default": ""}),
             }
         }
 
-    RETURN_TYPES = ()
+    RETURN_TYPES = ("STRING",)
     FUNCTION = "send"
     CATEGORY = "utils"
 
-    def send(self, outputs, smtp_server, smtp_port, username, password, from_addr, to_addr, subject):
-        msg = MIMEMultipart()
+    def send(self, repo_dataset, outputs, ai_host_api, smtp_server, smtp_port, username, password, from_addr, to_addr, subject):
+        msg = MIMEMultipart('alternative')
         msg['From'] = from_addr
         msg['To'] = to_addr
         msg['Subject'] = subject
 
-        # msg.attach(MIMEText(body, 'plain'))
+
+        # 定义变量
+        # repo_dataset = "Heng365/outputs"  # 仓库路径变量
+
+        # 分割字符串获取文件名列表
+        file_names = [name.strip() for name in outputs.split(",")]
+
+        # 构建URL列表
+        base_url = f"https://hf-mirror.com/datasets/{repo_dataset}/resolve/main/"
+        urls = [f"{base_url}{file_name}" for file_name in file_names]
+
+        # 拼接成最终格式
+        result = "&url=".join(urls)
+        result = "?url=" + result if result else ""
+        result = ai_host_api + result
+
+        # 纯文本版本
+        text = f"""您好！
+    
+您的AI生成项目已执行完成。
+请点击链接查看：{result}
+    
+如果链接无法点击，请复制到浏览器中打开。
+"""
+        part1 = MIMEText(text, 'plain')
+    
+        # HTML版本
+        html = f"""<html>
+<body>
+    <p>您好！</p>
+    <p>感谢您关注我们的服务，您的AI生成项目已执行完成。</p>
+    <p>请点击链接查看：<a href="{result}">查看<a></p>
+    <p><small>如果链接无法点击，请复制以下地址到浏览器中打开：<br>
+    {result}</small></p>
+</body>
+</html>"""
+        part2 = MIMEText(html, 'html')
+        
+        # 按照从简单到复杂的顺序添加
+        msg.attach(part1)  # 先添加简单版本
+        msg.attach(part2)  # 后添加复杂版本
 
 
         try:
