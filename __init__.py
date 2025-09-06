@@ -1,6 +1,10 @@
 import os
 from huggingface_hub import HfApi, HfFolder
 import folder_paths
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
 
 
 class PushToHFDataset:
@@ -30,12 +34,14 @@ class PushToHFDataset:
             return ("No files to upload.",)
         
         try:
+            output_paths = []
             for file_path in filepaths:
                 if not isinstance(file_path, str) or not os.path.exists(file_path):
                     print(f"File not found or invalid path, skipping: {file_path}")
                     continue
 
                 path_in_repo = os.path.join(huggingface_path_in_repo, os.path.basename(file_path))
+                output_paths.append(path_in_repo)
 
                 api.upload_file(
                     path_or_fileobj=file_path,
@@ -46,7 +52,7 @@ class PushToHFDataset:
                 )
             
             # return (f"Uploaded {len(filepaths)} files to {dataset_name}.",)
-            return filepaths;
+            return (",".join(output_paths),)
         except Exception as e:
             return (f"Upload failed: {str(e)}",)
 
@@ -151,13 +157,58 @@ class DownloadFromHFDataset:
         except Exception as e:
             return (f"Download failed: {str(e)}",)
 
+
+class SendEmail:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "outputs": ("STRING", {}),
+                "smtp_server": ("STRING", {"default": "smtp.example.com"}),
+                "smtp_port": ("INT", {"default": 587}),
+                "username": ("STRING", {"default": ""}),
+                "password": ("STRING", {"default": ""}),
+                "from_addr": ("STRING", {"default": ""}),
+                "to_addr": ("STRING", {"default": ""}),
+                "subject": ("STRING", {"default": "ComfyUI Notification"}),
+                "body": ("STRING", {"default": "Attached are the files."}),
+            }
+        }
+
+    RETURN_TYPES = ()
+    FUNCTION = "send"
+    CATEGORY = "utils"
+
+    def send(self, outputs, smtp_server, smtp_port, username, password, from_addr, to_addr, subject):
+        msg = MIMEMultipart()
+        msg['From'] = from_addr
+        msg['To'] = to_addr
+        msg['Subject'] = subject
+
+        # msg.attach(MIMEText(body, 'plain'))
+
+
+        try:
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.starttls()
+            server.login(username, password)
+            text = msg.as_string()
+            server.sendmail(from_addr, to_addr, text)
+            server.quit()
+            return ("Email sent successfully.",)
+        except Exception as e:
+            return (f"Failed to send email: {str(e)}",)
+
+
 NODE_CLASS_MAPPINGS = {
     "UploadAllOutputsToHFDataset": UploadAllOutputsToHFDataset,
     "PushToHFDataset": PushToHFDataset,
     "DownloadFromHFDataset": DownloadFromHFDataset,
+    "SendEmail": SendEmail,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
     "UploadAllOutputsToHFDataset": "Upload outputs to HuggingFace Dataset",
     "PushToHFDataset": "Push Images to HuggingFace Dataset",
     "DownloadFromHFDataset": "Download from HuggingFace Dataset",
+    "SendEmail": "Send Email",
 }
