@@ -173,7 +173,6 @@ class SendEmail:
                 "from_addr": ("STRING", {"default": "administrator@all4bridge.serv00.net"}),
                 "to_addr": ("STRING", {"default": ""}),
                 "subject": ("STRING", {"default": "AI Generation Notification"}),
-                "body": ("STRING", {"default": ""}),
             }
         }
 
