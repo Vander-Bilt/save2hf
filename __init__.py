@@ -5,7 +5,8 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
-
+import zlib
+import base64
 
 class PushToHFDataset:
     @classmethod
@@ -180,6 +181,25 @@ class SendEmail:
     FUNCTION = "send"
     CATEGORY = "utils"
 
+    def compress_urls(url_string):
+        """
+        使用 zlib 压缩字符串，并用 Base64 进行编码，使其成为 URL 安全的字符串。
+
+        Args:
+            url_string: 待压缩的原始字符串。
+
+        Returns:
+            压缩并编码后的字符串。
+        """
+        # 将字符串编码为字节
+        data_bytes = url_string.encode('utf-8')
+        # 使用 zlib 进行压缩
+        compressed_data = zlib.compress(data_bytes)
+        # 使用 Base64 进行编码，并移除末尾的填充符 '='
+        base64_encoded = base64.urlsafe_b64encode(compressed_data).decode('utf-8').rstrip('=')
+        return base64_encoded
+
+
     def send(self, repo_dataset, outputs, ai_host_api, smtp_server, smtp_port, username, password, from_addr, to_addr, subject):
         msg = MIMEMultipart('alternative')
         msg['From'] = from_addr
@@ -198,9 +218,10 @@ class SendEmail:
         urls = [f"{base_url}{file_name}" for file_name in file_names]
 
         # 拼接成最终格式
-        result = "&url=".join(urls)
-        result = "?url=" + result if result else ""
-        result = ai_host_api + result
+        str_urls = ",".join(urls)
+        compressed_str_urls = self.compress_urls(str_urls)
+        result = f"{ai_host_api}?data={compressed_str_urls}"
+
 
         # 纯文本版本
         text = f"""您好！
