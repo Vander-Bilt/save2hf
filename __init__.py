@@ -181,6 +181,7 @@ class SendEmail:
     FUNCTION = "send"
     CATEGORY = "utils"
 
+    @staticmethod
     def compress_urls(url_string):
         """
         使用 zlib 压缩字符串，并用 Base64 进行编码，使其成为 URL 安全的字符串。
@@ -219,7 +220,7 @@ class SendEmail:
 
         # 拼接成最终格式
         str_urls = ",".join(urls)
-        compressed_str_urls = self.compress_urls(str_urls)
+        compressed_str_urls = SendEmail.compress_urls(str_urls)
         result = f"{ai_host_api}?data={compressed_str_urls}"
 
 
