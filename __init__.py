@@ -239,7 +239,6 @@ class SendEmail:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "repo_dataset": ("STRING", {}),
                 "outputs": ("STRING", {}),
                 "ai_host_api": ("STRING", {"default": "http://ai.all4bridge.serv00.net/view"}),
                 "smtp_server": ("STRING", {"default": "mail11.serv00.com"}),
@@ -276,7 +275,7 @@ class SendEmail:
         return base64_encoded
 
 
-    def send(self, repo_dataset, outputs, ai_host_api, smtp_server, smtp_port, username, password, from_addr, to_addr, subject):
+    def send(self, outputs, ai_host_api, smtp_server, smtp_port, username, password, from_addr, to_addr, subject):
         msg = MIMEMultipart('alternative')
         msg['From'] = from_addr
         msg['To'] = to_addr
@@ -287,15 +286,17 @@ class SendEmail:
         # repo_dataset = "Heng365/outputs"  # 仓库路径变量
 
         # 分割字符串获取文件名列表
-        file_names = [name.strip() for name in outputs.split(",")]
+        # file_names = [name.strip() for name in outputs.split(",")]
 
-        # 构建URL列表
-        base_url = f"https://hf-mirror.com/datasets/{repo_dataset}/resolve/main/"
-        urls = [f"{base_url}{file_name}" for file_name in file_names]
+        # # 构建URL列表
+        # base_url = f"https://hf-mirror.com/datasets/{repo_dataset}/resolve/main/"
+        # urls = [f"{base_url}{file_name}" for file_name in file_names]
 
-        # 拼接成最终格式
-        str_urls = ",".join(urls)
-        compressed_str_urls = SendEmail.compress_urls(str_urls)
+        # # 拼接成最终格式
+        # str_urls = ",".join(urls)
+
+        # 不用hf datasets 变量了. 直接用outputs
+        compressed_str_urls = SendEmail.compress_urls(outputs)
         result = f"{ai_host_api}?data={compressed_str_urls}"
 
 
