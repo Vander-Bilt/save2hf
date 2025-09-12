@@ -7,6 +7,7 @@ from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 import zlib
 import base64
+import requests
 
 class PushToHFDataset:
     @classmethod
