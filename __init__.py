@@ -241,7 +241,7 @@ class SendEmail:
         return {
             "required": {
                 "outputs": ("STRING", {}),
-                "ai_host_api": ("STRING", {"default": "http://ai.all4bridge.serv00.net/view"}),
+                "ai_host_api": ("STRING", {"default": "https://hengai.pages.dev/view"}),
                 "smtp_server": ("STRING", {"default": "mail11.serv00.com"}),
                 "smtp_port": ("INT", {"default": 587}),
                 "username": ("STRING", {"default": "administrator@all4bridge.serv00.net"}),
