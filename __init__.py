@@ -316,10 +316,6 @@ class UpdateOrder:
     CATEGORY = "utils"
 
     def updateorder(self, outputs, host_update_order, enable_publish, order_id):
-        msg = MIMEMultipart('alternative')
-        msg['From'] = from_addr
-        msg['To'] = to_addr
-        msg['Subject'] = subject
 
         parts = outputs.split(',')
         urls = [item.split('|||')[0] for item in parts]
