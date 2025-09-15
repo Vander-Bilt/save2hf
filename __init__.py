@@ -1,3 +1,4 @@
+import io
 import os
 from huggingface_hub import HfApi, HfFolder
 import folder_paths
@@ -8,6 +9,9 @@ from email.mime.application import MIMEApplication
 import zlib
 import base64
 import requests
+import hashlib
+import numpy as np
+from PIL import Image
 
 class PushToHFDataset:
     @classmethod
@@ -60,22 +64,76 @@ class PushToHFDataset:
             return (f"Upload failed: {str(e)}",)
 
 
-class PushToImageBB:
+def dencrypt_image_v2(image:Image.Image, psw): 
+    width = image.width 
+    height = image.height 
+    x_arr = [i for i in range(width)] 
+    shuffle_arr(x_arr,psw) 
+    y_arr = [i for i in range(height)] 
+    shuffle_arr(y_arr,get_sha256(psw)) 
+    pixel_array = np.array(image) 
+
+
+    pixel_array = np.transpose(pixel_array, axes=(1, 0, 2)) 
+    for x in range(width-1,-1,-1): 
+        _x = x_arr[x] 
+        temp = pixel_array[x].copy() 
+        pixel_array[x] = pixel_array[_x] 
+        pixel_array[_x] = temp 
+    pixel_array = np.transpose(pixel_array, axes=(1, 0, 2)) 
+    for y in range(height-1,-1,-1): 
+        _y = y_arr[y] 
+        temp = pixel_array[y].copy() 
+        pixel_array[y] = pixel_array[_y] 
+        pixel_array[_y] = temp 
+
+
+    image.paste(Image.fromarray(pixel_array)) 
+    return image 
+
+
+def get_range(input:str,offset:int,range_len=4): 
+    offset = offset % len(input) 
+    return (input*2)[offset:offset+range_len] 
+
+def get_sha256(input:str): 
+    hash_object = hashlib.sha256() 
+    hash_object.update(input.encode('utf-8')) 
+    return hash_object.hexdigest() 
+
+def shuffle_arr(arr,key): 
+    sha_key = get_sha256(key) 
+    key_len = len(sha_key) 
+    arr_len = len(arr) 
+    key_offset = 0 
+    for i in range(arr_len): 
+        to_index = int(get_range(sha_key,key_offset,range_len=8),16) % (arr_len -i) 
+        key_offset += 1 
+        if key_offset >= key_len: key_offset = 0 
+        arr[i],arr[to_index] = arr[to_index],arr[i] 
+    return arr 
+
+
+class PushToImageBB_Update_Order:
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
                 "imgbb_api_key": ("STRING", {"default": ""}),
+                "host_update_order": ("STRING",{"default":"https://log.yesky.online/update-submission-urls"}),
                 "filepaths": ("STRING[]", {}),
+                "enable_publish": ("BOOLEAN", {"default": False}),
+                "order_id": ("INT", {"default": -1}),
+                "password": ("STRING", {"default": "Bilt8"}),
             }
         }
 
     RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("result",)
+    RETURN_NAMES = ("output_paths",)
     FUNCTION = "upload"
     CATEGORY = "utils"
 
-    def upload(self, imgbb_api_key,  filepaths):
+    def upload(self, imgbb_api_key, host_update_order, filepaths, enable_publish, order_id,  password):
         """
         将本地图片上传到ImgBB。
 
@@ -94,41 +152,68 @@ class PushToImageBB:
         
         try:
             output_paths = []
+            # output_thumb_paths = []
             for file_path in filepaths:
                 if not isinstance(file_path, str) or not os.path.exists(file_path):
                     print(f"File not found or invalid path, skipping: {file_path}")
                     continue
 
+                img = Image.open(file_path)
+                decrypted_img = dencrypt_image_v2(img, get_sha256(password))
+                
+                # 使用 BytesIO 在内存中保存图像数据
+                img_byte_arr = io.BytesIO()
+                decrypted_img.save(img_byte_arr, format='PNG')  # 或者 'JPEG'，根据需要选择
+                img_byte_arr.seek(0)  # 将指针移回文件开头
 
-                # 以二进制模式打开图片文件
-                with open(file_path, "rb") as file:
-                    # 准备请求参数和文件
-                    payload = {
-                        "key": imgbb_api_key,
-                    }
-                    # files参数会自动处理multipart/form-data
-                    files = {
-                        "image": file,
-                    }
+                # 准备请求参数和文件
+                payload = {
+                    "key": imgbb_api_key,
+                }
+                # files参数会自动处理multipart/form-data
+                files = {
+                    "image": (os.path.basename(file_path), img_byte_arr, 'image/png'),
+                }
 
-                    print("正在上传图片...")
-                    response = requests.post(url, data=payload, files=files)
-                    
-                    # 检查响应状态码
-                    if response.status_code == 200:
-                        result = response.json()
-                        if result['success']:
-                            print(f"图片 {file_path} 上传成功！")
-                            upload_data = result['data']
-                            output_paths.append(upload_data['url'])
+                print("正在上传图片...")
+                response = requests.post(url, data=payload, files=files)
+                
+                # 检查响应状态码
+                if response.status_code == 200:
+                    result = response.json()
+                    if result['success']:
+                        print(f"图片 {file_path} 上传成功！")
+                        upload_data = result['data']
+                        # print(upload_data['url'])
+                        # print(upload_data['thumb']['url'])
+                        output_paths.append(f"{upload_data['url']}|||{upload_data['thumb']['url']}")
+                        # output_thumb_paths.append(upload_data['thumb']['url'])
 
-                        else:
-                            print(f"图片上传失败: {result['error']['message']}")
                     else:
-                        print(f"请求失败，状态码：{response.status_code}")
-                        print(f"响应内容：{response.text}")
+                        print(f"图片上传失败: {result['error']['message']}")
+                else:
+                    print(f"请求失败，状态码：{response.status_code}")
+                    print(f"响应内容：{response.text}")
 
+            parts = ",".join(output_paths).split(',')
+            urls = [item.split('|||')[0] for item in parts]
+            urls_thumb = [item.split('|||')[1] for item in parts]
 
+            # 调用接口，更新userOrders表
+            update_data = {
+                "id": order_id,
+                "published": enable_publish,
+                "output_paths": ",".join(urls),
+                "output_thumb_paths": ",".join(urls_thumb),
+            }
+            response = requests.post(host_update_order, json=update_data)
+            if response.status_code == 200 or response.status_code == 201:
+                data = response.json()
+                print("请求成功:", data)
+            else:
+                print(f"请求失败，状态码: {response.status_code}")
+                print("错误信息:", response.text)
+            
             return (",".join(output_paths),)
         except Exception as e:
             return (f"Upload failed: {str(e)}",)
@@ -297,9 +382,11 @@ class SendEmail:
         # str_urls = ",".join(urls)
 
         # 不用hf datasets 变量了. 直接用outputs
-        compressed_str_urls = SendEmail.compress_urls(outputs)
-        result = f"{ai_host_api}?data={compressed_str_urls}"
+        parts = outputs.split(',')
+        urls = [item.split('|||')[0] for item in parts]
+        compressed_str_urls = SendEmail.compress_urls(",".join(urls))
 
+        result = f"{ai_host_api}?data={compressed_str_urls}"
 
         # 纯文本版本
         text = f"""您好！
@@ -343,14 +430,14 @@ class SendEmail:
 NODE_CLASS_MAPPINGS = {
     "UploadAllOutputsToHFDataset": UploadAllOutputsToHFDataset,
     "PushToHFDataset": PushToHFDataset,
-    "PushToImageBB": PushToImageBB,
+    "PushToImageBB_Update_Order": PushToImageBB_Update_Order,
     "DownloadFromHFDataset": DownloadFromHFDataset,
     "SendEmail": SendEmail,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
     "UploadAllOutputsToHFDataset": "Upload outputs to HuggingFace Dataset",
     "PushToHFDataset": "Push Images to HuggingFace Dataset",
-    "PushToImageBB": "Push Images to ImgBB",
+    "PushToImageBB_Update_Order": "Push Images to ImgBB, and update order",
     "DownloadFromHFDataset": "Download from HuggingFace Dataset",
     "SendEmail": "Send Email",
 }
