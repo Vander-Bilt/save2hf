@@ -159,11 +159,11 @@ class PushToImageBB:
 
                 print(f"file_path: {file_path}")
                 img = Image.open(file_path)
-                decrypted_img = dencrypt_image_v2(img, get_sha256(password))
+                # decrypted_img = dencrypt_image_v2(img, get_sha256(password))
                 
                 # 使用 BytesIO 在内存中保存图像数据
                 img_byte_arr = io.BytesIO()
-                decrypted_img.save(img_byte_arr, format='PNG')  # 或者 'JPEG'，根据需要选择
+                img.save(img_byte_arr, format='PNG')  # 或者 'JPEG'，根据需要选择
                 img_byte_arr.seek(0)  # 将指针移回文件开头
 
                 # 准备请求参数和文件
