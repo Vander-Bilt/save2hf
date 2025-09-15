@@ -150,11 +150,14 @@ class PushToImageBB:
         try:
             output_paths = []
             # output_thumb_paths = []
+            print(f"filepaths got: {filepaths}")
+
             for file_path in filepaths:
                 if not isinstance(file_path, str) or not os.path.exists(file_path):
                     print(f"File not found or invalid path, skipping: {file_path}")
                     continue
 
+                print(f"file_path: {file_path}")
                 img = Image.open(file_path)
                 decrypted_img = dencrypt_image_v2(img, get_sha256(password))
                 
@@ -181,6 +184,7 @@ class PushToImageBB:
                     if result['success']:
                         print(f"图片 {file_path} 上传成功！")
                         upload_data = result['data']
+                        print(f"upload_data: {upload_data}")
                         # print(upload_data['url'])
                         # print(upload_data['thumb']['url'])
                         output_paths.append(f"{upload_data['url']}|||{upload_data['thumb']['url']}")
