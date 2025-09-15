@@ -114,16 +114,13 @@ def shuffle_arr(arr,key):
     return arr 
 
 
-class PushToImageBB_Update_Order:
+class PushToImageBB:
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
                 "imgbb_api_key": ("STRING", {"default": ""}),
-                "host_update_order": ("STRING",{"default":"https://log.yesky.online/update-submission-urls"}),
                 "filepaths": ("STRING[]", {}),
-                "enable_publish": ("BOOLEAN", {"default": False}),
-                "order_id": ("INT", {"default": -1}),
                 "password": ("STRING", {"default": "Bilt8"}),
             }
         }
@@ -133,7 +130,7 @@ class PushToImageBB_Update_Order:
     FUNCTION = "upload"
     CATEGORY = "utils"
 
-    def upload(self, imgbb_api_key, host_update_order, filepaths, enable_publish, order_id,  password):
+    def upload(self, imgbb_api_key, filepaths, password):
         """
         将本地图片上传到ImgBB。
 
@@ -195,24 +192,6 @@ class PushToImageBB_Update_Order:
                     print(f"请求失败，状态码：{response.status_code}")
                     print(f"响应内容：{response.text}")
 
-            parts = ",".join(output_paths).split(',')
-            urls = [item.split('|||')[0] for item in parts]
-            urls_thumb = [item.split('|||')[1] for item in parts]
-
-            # 调用接口，更新userOrders表
-            update_data = {
-                "id": order_id,
-                "published": enable_publish,
-                "output_paths": ",".join(urls),
-                "output_thumb_paths": ",".join(urls_thumb),
-            }
-            response = requests.post(host_update_order, json=update_data)
-            if response.status_code == 200 or response.status_code == 201:
-                data = response.json()
-                print("请求成功:", data)
-            else:
-                print(f"请求失败，状态码: {response.status_code}")
-                print("错误信息:", response.text)
             
             return (",".join(output_paths),)
         except Exception as e:
@@ -319,6 +298,49 @@ class DownloadFromHFDataset:
         except Exception as e:
             return (f"Download failed: {str(e)}",)
 
+
+class UpdateOrder:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "outputs": ("STRING", {}),
+                "host_update_order": ("STRING",{"default":"https://log.yesky.online/update-submission-urls"}),
+                "enable_publish": ("BOOLEAN", {"default": False}),
+                "order_id": ("INT", {"default": -1}),
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    FUNCTION = "updateorder"
+    CATEGORY = "utils"
+
+    def updateorder(self, outputs, host_update_order, enable_publish, order_id):
+        msg = MIMEMultipart('alternative')
+        msg['From'] = from_addr
+        msg['To'] = to_addr
+        msg['Subject'] = subject
+
+        parts = outputs.split(',')
+        urls = [item.split('|||')[0] for item in parts]
+        urls_thumb = [item.split('|||')[1] for item in parts]
+
+        # 调用接口，更新userOrders表
+        update_data = {
+            "id": order_id,
+            "published": enable_publish,
+            "output_paths": ",".join(urls),
+            "output_thumb_paths": ",".join(urls_thumb),
+        }
+        response = requests.post(host_update_order, json=update_data)
+        if response.status_code == 200 or response.status_code == 201:
+            data = response.json()
+            print("请求成功:", data)
+        else:
+            print(f"请求失败，状态码: {response.status_code}")
+            print("错误信息:", response.text)
+
+        return (outputs,)
 
 class SendEmail:
     @classmethod
@@ -430,14 +452,16 @@ class SendEmail:
 NODE_CLASS_MAPPINGS = {
     "UploadAllOutputsToHFDataset": UploadAllOutputsToHFDataset,
     "PushToHFDataset": PushToHFDataset,
-    "PushToImageBB_Update_Order": PushToImageBB_Update_Order,
+    "PushToImageBB": PushToImageBB,
     "DownloadFromHFDataset": DownloadFromHFDataset,
+    "UpdateOrder": UpdateOrder,
     "SendEmail": SendEmail,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
     "UploadAllOutputsToHFDataset": "Upload outputs to HuggingFace Dataset",
     "PushToHFDataset": "Push Images to HuggingFace Dataset",
-    "PushToImageBB_Update_Order": "Push Images to ImgBB, and update order",
+    "PushToImageBB": "Push Images to ImgBB",
+    "UpdateOrder": "Update Order",
     "DownloadFromHFDataset": "Download from HuggingFace Dataset",
     "SendEmail": "Send Email",
 }
