@@ -150,15 +150,17 @@ class PushToImageBB:
         try:
             output_paths = []
             # output_thumb_paths = []
-            print(f"filepaths got: {filepaths}")
+            # print(f"filepaths got: {filepaths}")
 
             for file_path in filepaths:
                 if not isinstance(file_path, str) or not os.path.exists(file_path):
                     print(f"File not found or invalid path, skipping: {file_path}")
                     continue
 
-                print(f"file_path: {file_path}")
+                # print(f"file_path: {file_path}")
                 img = Image.open(file_path)
+                # ⚠️ 注意：上面的一行代码，会有解密插件接管，解密插件会在上传前解密图片 ⚠️
+                # 因此，下面的代码是不需要的。 否则，解密再解密会导致图片解密失败。
                 # decrypted_img = dencrypt_image_v2(img, get_sha256(password))
                 
                 # 使用 BytesIO 在内存中保存图像数据
@@ -175,7 +177,7 @@ class PushToImageBB:
                     "image": (os.path.basename(file_path), img_byte_arr, 'image/png'),
                 }
 
-                print("正在上传图片...")
+                # print("正在上传图片...")
                 response = requests.post(url, data=payload, files=files)
                 
                 # 检查响应状态码
