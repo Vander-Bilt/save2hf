@@ -13,7 +13,13 @@ import base64
 import requests
 import hashlib
 import numpy as np
-from PIL import Image
+from PIL import Image as PILImage # Use an alias to avoid conflict with your patched class
+
+# PILImage 这个别名指向的是 原始的 PIL.Image 类。
+# Image 这个名字则被你的插件通过 PIL.Image = EncryptedImage 这一行代码给 monkey-patching 了，它现在指向的是你自定义的 EncryptedImage 类。
+# 所以，任何使用 PILImage 的地方都会调用原始的 PIL 方法，而任何使用 Image 的地方则会调用你插件中重写的加密/解密方法。
+# 这是处理这种模块重写的常见技巧。通过为原始类创建一个别名，你可以在需要时绕过被修改的类，确保代码能与未被改动的库功能正确交互。
+
 
 # Define the NSFW probability threshold
 MAX_PROBABILITY = 0.85
@@ -156,11 +162,13 @@ class NSFWFilter:
         for image_tensor in images:
             # Convert PyTorch tensor to PIL Image for NSFW detection
             i = 255. * image_tensor.cpu().numpy()
-            img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8)).convert('RGB')
-            
+            # img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8)).convert('RGB')
+            original_img = PILImage.fromarray(np.clip(i, 0, 255).astype(np.uint8)).convert('RGB')
+
             nsfw_prob = 0.0
             try:
-                nsfw_prob = n2.predict_image(img)
+                # Pass the standard PIL image to the detection function
+                nsfw_prob = n2.predict_image(original_img)
             except Exception as e:
                 print(f"Error during NSFW detection: {e}. Defaulting probability to 0.0")
 
