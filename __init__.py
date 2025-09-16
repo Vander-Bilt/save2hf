@@ -15,11 +15,6 @@ import hashlib
 import numpy as np
 from PIL import Image as PILImage # Use an alias to avoid conflict with your patched class
 
-# PILImage 这个别名指向的是 原始的 PIL.Image 类。
-# Image 这个名字则被你的插件通过 PIL.Image = EncryptedImage 这一行代码给 monkey-patching 了，它现在指向的是你自定义的 EncryptedImage 类。
-# 所以，任何使用 PILImage 的地方都会调用原始的 PIL 方法，而任何使用 Image 的地方则会调用你插件中重写的加密/解密方法。
-# 这是处理这种模块重写的常见技巧。通过为原始类创建一个别名，你可以在需要时绕过被修改的类，确保代码能与未被改动的库功能正确交互。
-
 # Define the NSFW probability threshold
 MAX_PROBABILITY = 0.85
 
@@ -103,13 +98,7 @@ class NSFWFilter:
         # Process each image in the batch
         for image_tensor in images:
             i = 255. * image_tensor.cpu().numpy()
-            # 1. Create the initial PIL image object from the tensor
-            temp_img = PILImage.fromarray(np.clip(i, 0, 255).astype(np.uint8)).convert('RGB')
-
-            # 2. Create a truly "clean" PIL image object by copying the data
-            #    This is the crucial step that bypasses the monkey-patching
-            original_img = PILImage.new('RGB', temp_img.size)
-            original_img.putdata(list(temp_img.getdata()))
+            original_img = PILImage.fromarray(np.clip(i, 0, 255).astype(np.uint8)).convert('RGB')
 
             nsfw_prob = 0.0
             try:
@@ -183,7 +172,7 @@ class PushToImageBB:
                     continue
 
                 # print(f"file_path: {file_path}")
-                img = Image.open(file_path)
+                img = PILImage.open(file_path)
                 # ⚠️ 注意：上面的一行代码，会有解密插件接管，解密插件会在上传前解密图片 ⚠️
                 # 因此，下面的代码是不需要的。 否则，解密再解密会导致图片解密失败。
                 # decrypted_img = dencrypt_image_v2(img, get_sha256(password))
