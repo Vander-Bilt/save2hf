@@ -137,7 +137,7 @@ class NSFWFilter:
     CATEGORY = "utils"
     DESCRIPTION = "Filters images based on NSFW probability. Replaces high-risk images with a blank image."
 
-    def filter_images(self, images):
+    def filter_images(self, images, enabled):
         # 如果 enabled 为 False，直接返回原始图片，不进行任何处理
         if not enabled:
             print("NSFW filter is disabled. Passing through images.")
