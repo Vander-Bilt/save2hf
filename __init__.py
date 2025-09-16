@@ -1,5 +1,7 @@
 import io
 import os
+import torch
+import opennsfw2 as n2
 from huggingface_hub import HfApi, HfFolder
 import folder_paths
 import smtplib
@@ -12,6 +14,9 @@ import requests
 import hashlib
 import numpy as np
 from PIL import Image
+
+# Define the NSFW probability threshold
+MAX_PROBABILITY = 0.85
 
 class PushToHFDataset:
     @classmethod
@@ -113,6 +118,58 @@ def shuffle_arr(arr,key):
         arr[i],arr[to_index] = arr[to_index],arr[i] 
     return arr 
 
+class NSFWFilter:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "images": ("IMAGE", {"tooltip": "The image(s) to check and filter."}),
+            },
+        }
+
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("filtered_images",)
+    FUNCTION = "filter_images"
+    CATEGORY = "utils"
+    DESCRIPTION = "Filters images based on NSFW probability. Replaces high-risk images with a blank image."
+
+    def filter_images(self, images):
+        filtered_images = []
+
+        # The image tensor dimensions are (batch_size, height, width, channels)
+        batch_size, height, width, channels = images.shape
+
+        # Create a blank image tensor (all zeros for black, or all ones for white)
+        # We'll use a black image here, which is more noticeable.
+        blank_image = torch.zeros((1, height, width, channels), dtype=images.dtype, device=images.device)
+
+        # Process each image in the batch
+        for image_tensor in images:
+            # Convert PyTorch tensor to PIL Image for NSFW detection
+            i = 255. * image_tensor.cpu().numpy()
+            img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8)).convert('RGB')
+            
+            nsfw_prob = 0.0
+            try:
+                nsfw_prob = n2.predict_image(img)
+            except Exception as e:
+                print(f"Error during NSFW detection: {e}. Defaulting probability to 0.0")
+
+            if nsfw_prob > MAX_PROBABILITY:
+                print(f"NSFW probability ({nsfw_prob:.4f}) is above threshold ({MAX_PROBABILITY}). Replacing with blank image.")
+                filtered_images.append(blank_image)
+            else:
+                print(f"NSFW probability ({nsfw_prob:.4f}) is acceptable. Keeping original image.")
+                # We need to unsqueeze the tensor to match the batch dimension
+                filtered_images.append(image_tensor.unsqueeze(0))
+
+        # Concatenate the list of processed tensors back into a single batch tensor
+        return_images = torch.cat(filtered_images, dim=0)
+        
+        return (return_images,)
 
 class PushToImageBB:
     @classmethod
@@ -121,7 +178,6 @@ class PushToImageBB:
             "required": {
                 "imgbb_api_key": ("STRING", {"default": ""}),
                 "filepaths": ("STRING[]", {}),
-                "password": ("STRING", {"default": "Bilt8"}),
             }
         }
 
@@ -130,7 +186,7 @@ class PushToImageBB:
     FUNCTION = "upload"
     CATEGORY = "utils"
 
-    def upload(self, imgbb_api_key, filepaths, password):
+    def upload(self, imgbb_api_key, filepaths):
         """
         将本地图片上传到ImgBB。
 
@@ -454,6 +510,7 @@ class SendEmail:
 NODE_CLASS_MAPPINGS = {
     "UploadAllOutputsToHFDataset": UploadAllOutputsToHFDataset,
     "PushToHFDataset": PushToHFDataset,
+    "NSFWFilter": NSFWFilter,
     "PushToImageBB": PushToImageBB,
     "DownloadFromHFDataset": DownloadFromHFDataset,
     "UpdateOrder": UpdateOrder,
@@ -462,6 +519,7 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "UploadAllOutputsToHFDataset": "Upload outputs to HuggingFace Dataset",
     "PushToHFDataset": "Push Images to HuggingFace Dataset",
+    "NSFWFilter": "NSFW Filter",
     "PushToImageBB": "Push Images to ImgBB",
     "UpdateOrder": "Update Order",
     "DownloadFromHFDataset": "Download from HuggingFace Dataset",
