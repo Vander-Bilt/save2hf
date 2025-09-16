@@ -1,1 +1,3 @@
 huggingface_hub
+opennsfw2
+torch
