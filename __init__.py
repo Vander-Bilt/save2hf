@@ -20,7 +20,6 @@ from PIL import Image as PILImage # Use an alias to avoid conflict with your pat
 # 所以，任何使用 PILImage 的地方都会调用原始的 PIL 方法，而任何使用 Image 的地方则会调用你插件中重写的加密/解密方法。
 # 这是处理这种模块重写的常见技巧。通过为原始类创建一个别名，你可以在需要时绕过被修改的类，确保代码能与未被改动的库功能正确交互。
 
-
 # Define the NSFW probability threshold
 MAX_PROBABILITY = 0.85
 
