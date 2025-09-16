@@ -102,7 +102,12 @@ class NSFWFilter:
 
             nsfw_prob = 0.0
             try:
-                nsfw_prob = n2.predict_image(original_img)
+                image = n2.preprocess_image(original_img, n2.Preprocessing.YAHOO)
+                model = n2.make_open_nsfw_model()
+                inputs = np.expand_dims(image, axis=0)
+                predictions = model.predict(inputs)
+
+                sfw_prob, nsfw_prob = predictions[0]
             except Exception as e:
                 print(f"Error during NSFW detection: {e}. Defaulting probability to 0.0")
             
