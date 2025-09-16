@@ -87,8 +87,8 @@ class NSFWFilter:
             },
         }
 
-    RETURN_TYPES = ("IMAGE",)
-    RETURN_NAMES = ("filtered_images",)
+    RETURN_TYPES = ("IMAGE","FLOAT",)
+    RETURN_NAMES = ("filtered_images","nsfw_probabilities",)
     FUNCTION = "filter_images"
     CATEGORY = "utils"
     DESCRIPTION = "Filters images based on NSFW probability. Replaces high-risk images with a blank image."
