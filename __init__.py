@@ -110,7 +110,7 @@ class NSFWFilter:
             #    This is the crucial step that bypasses the monkey-patching
             original_img = PILImage.new('RGB', temp_img.size)
             original_img.putdata(list(temp_img.getdata()))
-                    
+
             nsfw_prob = 0.0
             try:
                 nsfw_prob = n2.predict_image(original_img)
@@ -349,6 +349,7 @@ class UpdateOrder:
     def updateorder(self, outputs, host_update_order, enable_publish, order_id):
 
         parts = outputs.split(',')
+        print(f"parts: {parts}")
         urls = [item.split('|||')[0] for item in parts]
         urls_thumb = [item.split('|||')[1] for item in parts]
 
