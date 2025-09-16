@@ -94,46 +94,45 @@ class NSFWFilter:
     DESCRIPTION = "Filters images based on NSFW probability. Replaces high-risk images with a blank image."
 
     def filter_images(self, images, enabled):
-        # 如果 enabled 为 False，直接返回原始图片，不进行任何处理
-        if not enabled:
-            print("NSFW filter is disabled. Passing through images.")
-            return (images,)
-
         filtered_images = []
+        nsfw_probs = []
 
-        # The image tensor dimensions are (batch_size, height, width, channels)
         batch_size, height, width, channels = images.shape
-
-        # Create a blank image tensor (all zeros for black, or all ones for white)
-        # We'll use a black image here, which is more noticeable.
         blank_image = torch.zeros((1, height, width, channels), dtype=images.dtype, device=images.device)
 
         # Process each image in the batch
         for image_tensor in images:
-            # Convert PyTorch tensor to PIL Image for NSFW detection
             i = 255. * image_tensor.cpu().numpy()
-            # img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8)).convert('RGB')
             original_img = PILImage.fromarray(np.clip(i, 0, 255).astype(np.uint8)).convert('RGB')
-
+            
             nsfw_prob = 0.0
             try:
-                # Pass the standard PIL image to the detection function
                 nsfw_prob = n2.predict_image(original_img)
             except Exception as e:
                 print(f"Error during NSFW detection: {e}. Defaulting probability to 0.0")
+            
+            nsfw_probs.append(nsfw_prob)
 
-            if nsfw_prob > MAX_PROBABILITY:
-                print(f"NSFW probability ({nsfw_prob:.4f}) is above threshold ({MAX_PROBABILITY}). Replacing with blank image.")
-                filtered_images.append(blank_image)
+            # 核心逻辑: 根据 enabled 状态和概率决定输出
+            if enabled:
+                # 如果启用过滤，并且概率超过阈值，则替换为黑图
+                if nsfw_prob > MAX_PROBABILITY:
+                    print(f"NSFW filter is ENABLED. Probability ({nsfw_prob:.4f}) is above threshold ({MAX_PROBABILITY}). Replacing with blank image.")
+                    filtered_images.append(blank_image)
+                # 否则，保留原图
+                else:
+                    print(f"NSFW filter is ENABLED. Probability ({nsfw_prob:.4f}) is acceptable. Keeping original image.")
+                    filtered_images.append(image_tensor.unsqueeze(0))
             else:
-                print(f"NSFW probability ({nsfw_prob:.4f}) is acceptable. Keeping original image.")
-                # We need to unsqueeze the tensor to match the batch dimension
+                # 如果未启用过滤，则始终保留原图
+                print(f"NSFW filter is DISABLED. Probability detected: {nsfw_prob:.4f}. Passing through original image.")
                 filtered_images.append(image_tensor.unsqueeze(0))
 
         # Concatenate the list of processed tensors back into a single batch tensor
         return_images = torch.cat(filtered_images, dim=0)
-        
-        return (return_images,)
+
+        # 返回结果：根据 enabled 状态，返回过滤后的图片和概率
+        return (return_images, nsfw_probs)
 
 class PushToImageBB:
     @classmethod
