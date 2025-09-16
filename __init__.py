@@ -103,8 +103,14 @@ class NSFWFilter:
         # Process each image in the batch
         for image_tensor in images:
             i = 255. * image_tensor.cpu().numpy()
-            original_img = PILImage.fromarray(np.clip(i, 0, 255).astype(np.uint8)).convert('RGB')
-            
+            # 1. Create the initial PIL image object from the tensor
+            temp_img = PILImage.fromarray(np.clip(i, 0, 255).astype(np.uint8)).convert('RGB')
+
+            # 2. Create a truly "clean" PIL image object by copying the data
+            #    This is the crucial step that bypasses the monkey-patching
+            original_img = PILImage.new('RGB', temp_img.size)
+            original_img.putdata(list(temp_img.getdata()))
+                    
             nsfw_prob = 0.0
             try:
                 nsfw_prob = n2.predict_image(original_img)
