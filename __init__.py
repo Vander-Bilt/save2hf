@@ -16,7 +16,7 @@ import numpy as np
 from PIL import Image as PILImage # Use an alias to avoid conflict with your patched class
 
 # Define the NSFW probability threshold
-MAX_PROBABILITY = 0.85
+MAX_PROBABILITY = 0.65
 
 class PushToHFDataset:
     @classmethod
@@ -102,15 +102,7 @@ class NSFWFilter:
 
             nsfw_prob = 0.0
             try:
-                # image = n2.preprocess_image(original_img, n2.Preprocessing.YAHOO)
-                # model = n2.make_open_nsfw_model()
-                # inputs = np.expand_dims(image, axis=0)
-                # predictions = model.predict(inputs)
-
-                # sfw_prob, nsfw_prob = predictions[0]
-
                 nsfw_prob = n2.predict_image(original_img)
-
 
             except Exception as e:
                 print(f"Error during NSFW detection: {e}. Defaulting probability to 0.0")
