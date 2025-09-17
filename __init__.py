@@ -16,7 +16,7 @@ import numpy as np
 from PIL import Image as PILImage # Use an alias to avoid conflict with your patched class
 
 # Define the NSFW probability threshold
-MAX_PROBABILITY = 0.65
+# MAX_PROBABILITY = 0.65
 
 class PushToHFDataset:
     @classmethod
@@ -79,6 +79,7 @@ class NSFWFilter:
             "required": {
                 "images": ("IMAGE", {"tooltip": "The image(s) to check and filter."}),
                 "enabled": ("BOOLEAN", {"default": True, "tooltip": "Whether to enable the NSFW filter."}),
+                "PROBABILITY": ("FLOAT", {"default": 6.5, "tooltip": "NSFW probability threshold."}),
             },
         }
 
@@ -88,7 +89,7 @@ class NSFWFilter:
     CATEGORY = "utils"
     DESCRIPTION = "Filters images based on NSFW probability. Replaces high-risk images with a blank image."
 
-    def filter_images(self, images, enabled):
+    def filter_images(self, images, enabled, PROBABILITY):
         filtered_images = []
         nsfw_probs = []
 
@@ -107,14 +108,15 @@ class NSFWFilter:
             except Exception as e:
                 print(f"Error during NSFW detection: {e}. Defaulting probability to 0.0")
             
-            nsfw_probs.append(nsfw_prob)
+            
 
             # 核心逻辑: 根据 enabled 状态和概率决定输出
             if enabled:
                 # 如果启用过滤，并且概率超过阈值，则替换为黑图
-                if nsfw_prob > MAX_PROBABILITY:
-                    print(f"NSFW filter is ENABLED. Probability ({nsfw_prob:.4f}) is above threshold ({MAX_PROBABILITY}). Replacing with blank image.")
+                if nsfw_prob > PROBABILITY:
+                    print(f"NSFW filter is ENABLED. Probability ({nsfw_prob:.4f}) is above threshold ({PROBABILITY}). RESET it to 0. Replacing with blank image.")
                     filtered_images.append(blank_image)
+                    nsfw_prob = 0
                 # 否则，保留原图
                 else:
                     print(f"NSFW filter is ENABLED. Probability ({nsfw_prob:.4f}) is acceptable. Keeping original image.")
@@ -123,6 +125,8 @@ class NSFWFilter:
                 # 如果未启用过滤，则始终保留原图
                 print(f"NSFW filter is DISABLED. Probability detected: {nsfw_prob:.4f}. Passing through original image.")
                 filtered_images.append(image_tensor.unsqueeze(0))
+
+            nsfw_probs.append(nsfw_prob)
 
         # Concatenate the list of processed tensors back into a single batch tensor
         return_images = torch.cat(filtered_images, dim=0)
@@ -137,6 +141,7 @@ class PushToImageBB:
             "required": {
                 "imgbb_api_key": ("STRING", {"default": ""}),
                 "filepaths": ("STRING[]", {}),
+                "nsfw_probabilities": ("FLOAT", {}),
             }
         }
 
@@ -145,7 +150,7 @@ class PushToImageBB:
     FUNCTION = "upload"
     CATEGORY = "utils"
 
-    def upload(self, imgbb_api_key, filepaths):
+    def upload(self, imgbb_api_key, filepaths, nsfw_probabilities):
         """
         将本地图片上传到ImgBB。
 
@@ -167,10 +172,14 @@ class PushToImageBB:
             # output_thumb_paths = []
             # print(f"filepaths got: {filepaths}")
 
+            idx = 0
             for file_path in filepaths:
                 if not isinstance(file_path, str) or not os.path.exists(file_path):
                     print(f"File not found or invalid path, skipping: {file_path}")
                     continue
+
+                nsfw_prob = nsfw_probabilities[idx]
+                idx += 1
 
                 # print(f"file_path: {file_path}")
                 img = PILImage.open(file_path)
@@ -204,7 +213,7 @@ class PushToImageBB:
                         print(f"upload_data: {upload_data}")
                         # print(upload_data['url'])
                         # print(upload_data['thumb']['url'])
-                        output_paths.append(f"{upload_data['url']}|||{upload_data['thumb']['url']}")
+                        output_paths.append(f"{upload_data['url']}|||{upload_data['thumb']['url']}|||{nsfw_prob:.4f}")
                         # output_thumb_paths.append(upload_data['thumb']['url'])
 
                     else:
@@ -342,6 +351,9 @@ class UpdateOrder:
         print(f"parts: {parts}")
         urls = [item.split('|||')[0] for item in parts]
         urls_thumb = [item.split('|||')[1] for item in parts]
+        nsfw_probs = [item.split('|||')[2] for item in parts]
+
+        print(f"nsfw_probs: {nsfw_probs}")
 
         # 调用接口，更新userOrders表
         update_data = {
@@ -349,7 +361,9 @@ class UpdateOrder:
             "published": enable_publish,
             "output_paths": ",".join(urls),
             "output_thumb_paths": ",".join(urls_thumb),
+            "nsfw_probs": ",".join([str(prob) for prob in nsfw_probs]),
         }
+        print(f"update_data: {update_data}")
         response = requests.post(host_update_order, json=update_data)
         if response.status_code == 200 or response.status_code == 201:
             data = response.json()
