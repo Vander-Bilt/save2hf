@@ -79,7 +79,7 @@ class NSFWFilter:
             "required": {
                 "images": ("IMAGE", {"tooltip": "The image(s) to check and filter."}),
                 "enabled": ("BOOLEAN", {"default": True, "tooltip": "Whether to enable the NSFW filter."}),
-                "PROBABILITY": ("FLOAT", {"default": 6.5, "tooltip": "NSFW probability threshold."}),
+                "PROBABILITY": ("FLOAT", {"default": 0.65, "tooltip": "NSFW probability threshold."}),
             },
         }
 
