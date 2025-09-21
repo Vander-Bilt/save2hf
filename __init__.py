@@ -193,34 +193,55 @@ class PushToImageBB:
                 img_byte_arr.seek(0)  # 将指针移回文件开头
 
                 # 准备请求参数和文件
-                payload = {
-                    "key": imgbb_api_key,
-                }
-                # files参数会自动处理multipart/form-data
-                files = {
-                    "image": (os.path.basename(file_path), img_byte_arr, 'image/png'),
-                }
+                # payload = {
+                #     "key": imgbb_api_key,
+                # }
+                # # files参数会自动处理multipart/form-data
+                # files = {
+                #     "image": (os.path.basename(file_path), img_byte_arr, 'image/png'),
+                # }
 
-                # print("正在上传图片...")
-                response = requests.post(url, data=payload, files=files)
+                # # print("正在上传图片...")
+                # response = requests.post(url, data=payload, files=files)
                 
-                # 检查响应状态码
+                # # 检查响应状态码
+                # if response.status_code == 200:
+                #     result = response.json()
+                #     if result['success']:
+                #         print(f"图片 {file_path} 上传成功！")
+                #         upload_data = result['data']
+                #         print(f"upload_data: {upload_data}")
+                #         # print(upload_data['url'])
+                #         # print(upload_data['thumb']['url'])
+                #         output_paths.append(f"{upload_data['url']}|||{upload_data['thumb']['url']}|||{nsfw_prob:.4f}")
+                #         # output_thumb_paths.append(upload_data['thumb']['url'])
+
+                #     else:
+                #         print(f"图片上传失败: {result['error']['message']}")
+                # else:
+                #     print(f"请求失败，状态码：{response.status_code}")
+                #     print(f"响应内容：{response.text}")
+
+
+                # 发送请求
+                response = requests.post(
+                    'https://all4bridge.serv00.net/upload-image-binary',
+                    data=img_byte_arr.getvalue(),
+                    # headers=headers
+                )
+                
+                # 处理响应
                 if response.status_code == 200:
                     result = response.json()
-                    if result['success']:
-                        print(f"图片 {file_path} 上传成功！")
-                        upload_data = result['data']
-                        print(f"upload_data: {upload_data}")
-                        # print(upload_data['url'])
-                        # print(upload_data['thumb']['url'])
-                        output_paths.append(f"{upload_data['url']}|||{upload_data['thumb']['url']}|||{nsfw_prob:.4f}")
-                        # output_thumb_paths.append(upload_data['thumb']['url'])
-
-                    else:
-                        print(f"图片上传失败: {result['error']['message']}")
+                    print(f"✅ 上传成功!")
+                    print(f"原图URL: {result['url']}")
+                    print(f"缩略图URL: {result['thumb']}")
+                    print(f"文件大小: {result['size']} bytes")
+                    output_paths.append(f"{result['url']}|||{result['thumb']['url']}|||{nsfw_prob:.4f}")
+                    # return result
                 else:
-                    print(f"请求失败，状态码：{response.status_code}")
-                    print(f"响应内容：{response.text}")
+                    print(f"❌ 上传失败: {response.text}")
+                    # return None
 
             
             return (",".join(output_paths),)
