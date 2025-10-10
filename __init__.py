@@ -470,6 +470,16 @@ class SendEmail:
 请点击链接查看：{result}
     
 如果链接无法点击，请复制到浏览器中打开。
+
+
+
+Hello!
+
+Your AI-generated project has been successfully completed.
+Please click the link to view it: {result}
+
+If the link is not clickable, please copy it and open it in your browser.
+
 """
         part1 = MIMEText(text, 'plain')
     
@@ -481,6 +491,17 @@ class SendEmail:
     <p>请点击链接查看：<a href="{result}">查看<a></p>
     <p><small>如果链接无法点击，请复制以下地址到浏览器中打开：<br>
     {result}</small></p>
+
+<br/>
+<br/>
+<br/>
+
+<p>Hello!</p>
+<p>Thank you for using our service. Your AI-generated project has been successfully completed.</p>
+<p>Please click the link below to view it: <a href="{result}">View</a></p>
+<p><small>If the link is not clickable, please copy the following address and paste it into your browser:<br>
+{result}</small></p>
+
 </body>
 </html>"""
         part2 = MIMEText(html, 'html')
