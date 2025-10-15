@@ -368,6 +368,8 @@ class UpdateOrder:
 
     def updateorder(self, outputs, host_update_order, enable_publish, order_id):
 
+        print(f"outputs: {outputs}")
+
         if not outputs:
             return (outputs,)
 
