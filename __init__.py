@@ -368,6 +368,9 @@ class UpdateOrder:
 
     def updateorder(self, outputs, host_update_order, enable_publish, order_id):
 
+        if not outputs:
+            return (outputs,)
+
         parts = outputs.split(',')
         print(f"parts: {parts}")
         urls = [item.split('|||')[0] for item in parts]
@@ -455,6 +458,9 @@ class SendEmail:
 
         # # 拼接成最终格式
         # str_urls = ",".join(urls)
+
+        if not outputs:
+            return (outputs,)
 
         # 不用hf datasets 变量了. 直接用outputs
         parts = outputs.split(',')
