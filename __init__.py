@@ -447,6 +447,7 @@ class SendEmail:
         msg['To'] = to_addr
         msg['Subject'] = subject
 
+        print(f"outputs: {outputs} from {from_addr} to {to_addr}")
 
         # 定义变量
         # repo_dataset = "Heng365/outputs"  # 仓库路径变量
