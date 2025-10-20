@@ -449,6 +449,9 @@ class SendEmail:
 
         print(f"outputs: {outputs} from {from_addr} to {to_addr}")
 
+        if not outputs or not to_addr:
+            return (outputs,)
+
         # 定义变量
         # repo_dataset = "Heng365/outputs"  # 仓库路径变量
 
@@ -462,8 +465,6 @@ class SendEmail:
         # # 拼接成最终格式
         # str_urls = ",".join(urls)
 
-        if not outputs:
-            return (outputs,)
 
         # 不用hf datasets 变量了. 直接用outputs
         parts = outputs.split(',')
