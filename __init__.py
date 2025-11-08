@@ -558,6 +558,7 @@ If the link is not clickable, please copy it and open it in your browser.
 
 
 NODE_CLASS_MAPPINGS = {
+    "ExecuteCopyCommand": ExecuteCopyCommand,
     "UploadAllOutputsToHFDataset": UploadAllOutputsToHFDataset,
     "PushToHFDataset": PushToHFDataset,
     "NSFWFilter": NSFWFilter,
@@ -567,6 +568,7 @@ NODE_CLASS_MAPPINGS = {
     "SendEmail": SendEmail,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
+    "ExecuteCopyCommand": "Execute Copy Command",
     "UploadAllOutputsToHFDataset": "Upload outputs to HuggingFace Dataset",
     "PushToHFDataset": "Push Images to HuggingFace Dataset",
     "NSFWFilter": "NSFW Filter",
