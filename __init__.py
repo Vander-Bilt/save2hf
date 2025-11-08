@@ -316,9 +316,10 @@ class RetrieveLastLatentFileInFolder:
             latest_filename = os.path.basename(latest_file)
             
             
-            return (f"Latest latent file: {latest_filename}",)
+            return (latest_filename,)
         except Exception as e:
-            return (f"Retrieve latest latent file failed: {str(e)}",)
+            print(f"Retrieve latest latent file failed: {str(e)}")
+            return (None,)
 
 
 
