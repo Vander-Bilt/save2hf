@@ -14,6 +14,7 @@ import requests
 import hashlib
 import numpy as np
 from PIL import Image as PILImage # Use an alias to avoid conflict with your patched class
+import shutil
 
 # Define the NSFW probability threshold
 # MAX_PROBABILITY = 0.65
@@ -249,6 +250,29 @@ class PushToImageBB:
             return (f"Upload failed: {str(e)}",)
 
 
+
+class ExecuteCopyCommand:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "src": ("STRING", {"default": "/kaggle/ComfyUI/output/latents/ComfyUI_00001_.latent"}),
+                "dst": ("STRING", {"default": "/kaggle/ComfyUI/input"}),
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("result",)
+    FUNCTION = "run"
+    CATEGORY = "utils"
+
+    def run(self, src, dst):
+        try:
+            shutil.copy2(src, dst)
+            return (f"Copied {src} to {dst}",)
+        except Exception as e:
+            return (f"Copy failed: {str(e)}",)
+        
 
 class UploadAllOutputsToHFDataset:
     @classmethod
