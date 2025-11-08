@@ -252,38 +252,12 @@ class PushToImageBB:
             return (f"Upload failed: {str(e)}",)
 
 
-
-class ExecuteCopyCommand:
+class RetrieveLastLatentAndCopy2Input:
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "src": ("STRING", {"default": "/kaggle/ComfyUI/output/latents/ComfyUI_00001_.latent"}),
-                "dst": ("STRING", {"default": "/kaggle/ComfyUI/input"}),
-            }
-        }
-
-    RETURN_TYPES = ("BOOLEAN",)
-    RETURN_NAMES = ("success",)
-    FUNCTION = "run"
-    CATEGORY = "utils"
-
-    def run(self, src, dst):
-        try:
-            # if the dst not exist, create it firstly
-            os.makedirs(dst, exist_ok=True)
-            shutil.copy2(src, dst)
-            return (True,)
-        except Exception as e:
-            return (False,)
-
-class RetrieveLastLatentFileInFolder:
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "copied": ("BOOLEAN", {"default": True}),
-                # "src": ("STRING", {"default": "/kaggle/ComfyUI/output/latents/ComfyUI_00001_.latent"}),
+                "src": ("STRING", {"default": "/kaggle/ComfyUI/output/latents"}),
                 "dst": ("STRING", {"default": "/kaggle/ComfyUI/input"}),
             }
         }
@@ -293,18 +267,16 @@ class RetrieveLastLatentFileInFolder:
     FUNCTION = "run"
     CATEGORY = "utils"
 
-    def run(self, copied, dst):
-        if not copied:
-            print("❌ 复制失败")
-            return (None,)
+    def run(self, src, dst):
+
         try:
-            # 从dst文件夹中获取最新的latent文件
-            files = os.listdir(dst)
+            # 从src文件夹中获取最新的latent文件
+            files = os.listdir(src)
             if not files:
                 return None
             
             # 获取所有文件的完整路径
-            paths = [os.path.join(dst, f) for f in files]
+            paths = [os.path.join(src, f) for f in files]
             # 过滤出文件（排除子目录）
             files_only = [f for f in paths if os.path.isfile(f)]
             
@@ -314,7 +286,9 @@ class RetrieveLastLatentFileInFolder:
             # 按修改时间排序，返回最新的文件
             latest_file = max(files_only, key=os.path.getmtime)
             latest_filename = os.path.basename(latest_file)
-            
+
+            os.makedirs(dst, exist_ok=True)
+            shutil.copy2(latest_file, dst)
             
             return (latest_filename,)
         except Exception as e:
@@ -328,6 +302,7 @@ class LoadLatentFromString:
     def INPUT_TYPES(s):
         return {
             "required": {
+                "input_dir": ("STRING", {"default": "/kaggle/ComfyUI/input"}),  # 接受文件名字符串
                 "latent_filename": ("STRING", {"default": "my_latent_file.latent"}),  # 接受文件名字符串
             }
         }
@@ -336,9 +311,7 @@ class LoadLatentFromString:
     RETURN_TYPES = ("LATENT",)
     FUNCTION = "load"
 
-    def load(self, latent_filename):
-        # 获取 ComfyUI 的输入目录
-        input_dir = folder_paths.get_input_directory()
+    def load(self, input_dir, latent_filename):
         # 构建完整的文件路径
         latent_path = os.path.join(input_dir, latent_filename)
 
@@ -657,8 +630,7 @@ If the link is not clickable, please copy it and open it in your browser.
 
 
 NODE_CLASS_MAPPINGS = {
-    "ExecuteCopyCommand": ExecuteCopyCommand,
-    "RetrieveLastLatentFileInFolder": RetrieveLastLatentFileInFolder,
+    "RetrieveLastLatentAndCopy2Input": RetrieveLastLatentAndCopy2Input,
     "LoadLatentFromString": LoadLatentFromString,
     "UploadAllOutputsToHFDataset": UploadAllOutputsToHFDataset,
     "PushToHFDataset": PushToHFDataset,
@@ -669,8 +641,7 @@ NODE_CLASS_MAPPINGS = {
     "SendEmail": SendEmail,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "ExecuteCopyCommand": "Execute Copy Command",
-    "RetrieveLastLatentFileInFolder": "Retrieve Last Latent File in Folder",
+    "RetrieveLastLatentAndCopy2Input": "Retrieve Last Latent and Copy to Input",
     "LoadLatentFromString": "Load Latent from String",
     "UploadAllOutputsToHFDataset": "Upload outputs to HuggingFace Dataset",
     "PushToHFDataset": "Push Images to HuggingFace Dataset",
