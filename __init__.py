@@ -16,6 +16,8 @@ import numpy as np
 from PIL import Image as PILImage # Use an alias to avoid conflict with your patched class
 import shutil
 
+import safetensors.torch
+
 # Define the NSFW probability threshold
 # MAX_PROBABILITY = 0.65
 
@@ -317,6 +319,58 @@ class RetrieveLastLatentFileInFolder:
             return (f"Latest latent file: {latest_filename}",)
         except Exception as e:
             return (f"Retrieve latest latent file failed: {str(e)}",)
+
+
+
+class LoadLatentFromString:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "latent_filename": ("STRING", {"default": "my_latent_file.latent"}),  # 接受文件名字符串
+            }
+        }
+
+    CATEGORY = "utils"  # 或者 "_for_testing" 如果你想放在测试类别下
+    RETURN_TYPES = ("LATENT",)
+    FUNCTION = "load"
+
+    def load(self, latent_filename):
+        # 获取 ComfyUI 的输入目录
+        input_dir = folder_paths.get_input_directory()
+        # 构建完整的文件路径
+        latent_path = os.path.join(input_dir, latent_filename)
+
+        # 检查文件是否存在
+        if not os.path.isfile(latent_path):
+            raise FileNotFoundError(f"Latent file not found: {latent_path}")
+
+        # 加载 latent 数据
+        latent = safetensors.torch.load_file(latent_path, device="cpu")
+        multiplier = 1.0
+        if "latent_format_version_0" not in latent:
+            multiplier = 1.0 / 0.18215
+        samples = {"samples": latent["latent_tensor"].float() * multiplier}
+        return (samples,)
+
+    @classmethod
+    def IS_CHANGED(s, latent_filename):
+        input_dir = folder_paths.get_input_directory()
+        latent_path = os.path.join(input_dir, latent_filename)
+        m = hashlib.sha256()
+        with open(latent_path, 'rb') as f:
+            m.update(f.read())
+        return m.digest().hex()
+
+    @classmethod
+    def VALIDATE_INPUTS(s, latent_filename):
+        input_dir = folder_paths.get_input_directory()
+        latent_path = os.path.join(input_dir, latent_filename)
+        if not os.path.exists(latent_path):
+            return f"Invalid latent file: {latent_path}"
+        return True
+
+
 
 class UploadAllOutputsToHFDataset:
     @classmethod
