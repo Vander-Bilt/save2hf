@@ -261,8 +261,8 @@ class ExecuteCopyCommand:
             }
         }
 
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("result",)
+    RETURN_TYPES = ("BOOLEAN",)
+    RETURN_NAMES = ("success",)
     FUNCTION = "run"
     CATEGORY = "utils"
 
@@ -271,15 +271,16 @@ class ExecuteCopyCommand:
             # if the dst not exist, create it firstly
             os.makedirs(dst, exist_ok=True)
             shutil.copy2(src, dst)
-            return (f"Copied {src} to {dst}",)
+            return (True,)
         except Exception as e:
-            return (f"Copy failed: {str(e)}",)
+            return (False,)
 
 class RetrieveLastLatentFileInFolder:
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
+                "copied": ("BOOLEAN", {"default": True}),
                 # "src": ("STRING", {"default": "/kaggle/ComfyUI/output/latents/ComfyUI_00001_.latent"}),
                 "dst": ("STRING", {"default": "/kaggle/ComfyUI/input"}),
             }
@@ -290,7 +291,10 @@ class RetrieveLastLatentFileInFolder:
     FUNCTION = "run"
     CATEGORY = "utils"
 
-    def run(self, dst):
+    def run(self, copied, dst):
+        if not copied:
+            print("❌ 复制失败")
+            return (None,)
         try:
             # 从dst文件夹中获取最新的latent文件
             files = os.listdir(dst)
