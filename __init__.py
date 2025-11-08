@@ -268,11 +268,51 @@ class ExecuteCopyCommand:
 
     def run(self, src, dst):
         try:
+            # if the dst not exist, create it firstly
+            os.makedirs(dst, exist_ok=True)
             shutil.copy2(src, dst)
             return (f"Copied {src} to {dst}",)
         except Exception as e:
             return (f"Copy failed: {str(e)}",)
-        
+
+class RetrieveLastLatentFileInFolder:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                # "src": ("STRING", {"default": "/kaggle/ComfyUI/output/latents/ComfyUI_00001_.latent"}),
+                "dst": ("STRING", {"default": "/kaggle/ComfyUI/input"}),
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("result",)
+    FUNCTION = "run"
+    CATEGORY = "utils"
+
+    def run(self, dst):
+        try:
+            # 从dst文件夹中获取最新的latent文件
+            files = os.listdir(dst)
+            if not files:
+                return None
+            
+            # 获取所有文件的完整路径
+            paths = [os.path.join(dst, f) for f in files]
+            # 过滤出文件（排除子目录）
+            files_only = [f for f in paths if os.path.isfile(f)]
+            
+            if not files_only:
+                return None
+            
+            # 按修改时间排序，返回最新的文件
+            latest_file = max(files_only, key=os.path.getmtime)
+            latest_filename = os.path.basename(latest_file)
+            
+            
+            return (f"Latest latent file: {latest_filename}",)
+        except Exception as e:
+            return (f"Retrieve latest latent file failed: {str(e)}",)
 
 class UploadAllOutputsToHFDataset:
     @classmethod
@@ -559,6 +599,7 @@ If the link is not clickable, please copy it and open it in your browser.
 
 NODE_CLASS_MAPPINGS = {
     "ExecuteCopyCommand": ExecuteCopyCommand,
+    "RetrieveLastLatentFileInFolder": RetrieveLastLatentFileInFolder,
     "UploadAllOutputsToHFDataset": UploadAllOutputsToHFDataset,
     "PushToHFDataset": PushToHFDataset,
     "NSFWFilter": NSFWFilter,
@@ -569,6 +610,7 @@ NODE_CLASS_MAPPINGS = {
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
     "ExecuteCopyCommand": "Execute Copy Command",
+    "RetrieveLastLatentFileInFolder": "Retrieve Last Latent File in Folder",
     "UploadAllOutputsToHFDataset": "Upload outputs to HuggingFace Dataset",
     "PushToHFDataset": "Push Images to HuggingFace Dataset",
     "NSFWFilter": "NSFW Filter",
