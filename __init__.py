@@ -658,6 +658,7 @@ If the link is not clickable, please copy it and open it in your browser.
 NODE_CLASS_MAPPINGS = {
     "ExecuteCopyCommand": ExecuteCopyCommand,
     "RetrieveLastLatentFileInFolder": RetrieveLastLatentFileInFolder,
+    "LoadLatentFromString": LoadLatentFromString,
     "UploadAllOutputsToHFDataset": UploadAllOutputsToHFDataset,
     "PushToHFDataset": PushToHFDataset,
     "NSFWFilter": NSFWFilter,
@@ -669,6 +670,7 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "ExecuteCopyCommand": "Execute Copy Command",
     "RetrieveLastLatentFileInFolder": "Retrieve Last Latent File in Folder",
+    "LoadLatentFromString": "Load Latent from String",
     "UploadAllOutputsToHFDataset": "Upload outputs to HuggingFace Dataset",
     "PushToHFDataset": "Push Images to HuggingFace Dataset",
     "NSFWFilter": "NSFW Filter",
