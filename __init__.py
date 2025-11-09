@@ -327,23 +327,6 @@ class LoadLatentFromString:
         samples = {"samples": latent["latent_tensor"].float() * multiplier}
         return (samples,)
 
-    @classmethod
-    def IS_CHANGED(s, latent_filename):
-        input_dir = folder_paths.get_input_directory()
-        latent_path = os.path.join(input_dir, latent_filename)
-        m = hashlib.sha256()
-        with open(latent_path, 'rb') as f:
-            m.update(f.read())
-        return m.digest().hex()
-
-    @classmethod
-    def VALIDATE_INPUTS(s, latent_filename):
-        input_dir = folder_paths.get_input_directory()
-        latent_path = os.path.join(input_dir, latent_filename)
-        if not os.path.exists(latent_path):
-            return f"Invalid latent file: {latent_path}"
-        return True
-
 
 
 class UploadAllOutputsToHFDataset:
