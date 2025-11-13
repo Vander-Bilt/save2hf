@@ -239,7 +239,7 @@ class PushToImageBB:
                     print(f"✅ 上传成功!")
                     print(f"原图URL: {result['url']}")
                     print(f"缩略图URL: {result['thumb']}")
-                    print(f"文件大小: {result['size']} bytes")
+                    # print(f"文件大小: {result['size']} bytes")
                     output_paths.append(f"{result['url']}|||{result['thumb']}|||{nsfw_prob:.4f}")
                     # return result
                 else:
