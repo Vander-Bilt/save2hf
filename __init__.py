@@ -1,5 +1,6 @@
 import io
 import os
+import sys
 import torch
 import opennsfw2 as n2
 from huggingface_hub import HfApi, HfFolder
@@ -251,6 +252,23 @@ class PushToImageBB:
         except Exception as e:
             return (f"Upload failed: {str(e)}",)
 
+class RestartApp:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {}
+        }
+
+    RETURN_TYPES = ()
+    RETURN_NAMES = ()
+    FUNCTION = "run"
+    CATEGORY = "utils"
+
+    def run(self):
+        print(f"sys.executable: {sys.executable}")
+        print(f"sys.argv: {sys.argv}")
+        print("正在重新启动程序...")
+        os.execv(sys.executable, ['python'] + sys.argv)
 
 class RetrieveLastLatentAndCopy2Input:
     @classmethod
@@ -613,6 +631,7 @@ If the link is not clickable, please copy it and open it in your browser.
 
 
 NODE_CLASS_MAPPINGS = {
+    "RestartApp": RestartApp,
     "RetrieveLastLatentAndCopy2Input": RetrieveLastLatentAndCopy2Input,
     "LoadLatentFromString": LoadLatentFromString,
     "UploadAllOutputsToHFDataset": UploadAllOutputsToHFDataset,
@@ -624,6 +643,7 @@ NODE_CLASS_MAPPINGS = {
     "SendEmail": SendEmail,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
+    "RestartApp": "Restart App",
     "RetrieveLastLatentAndCopy2Input": "Retrieve Last Latent and Copy to Input",
     "LoadLatentFromString": "Load Latent from String",
     "UploadAllOutputsToHFDataset": "Upload outputs to HuggingFace Dataset",
